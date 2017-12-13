@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Input;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -25,6 +26,20 @@ namespace PaintingAppWithDial
         public MainPage()
         {
             this.InitializeComponent();
+        }
+
+        // 画面に来た時に呼ばれる
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // ホイール(Dial)のインスタンス
+            var controller = RadialController.CreateForCurrentView();
+
+            // ホイールに追加するメニューを作成（この場合、undo/redo）
+            var menuItem = RadialControllerMenuItem
+                .CreateFromKnownIcon(displayText: "取り消し/やり直し", value: RadialControllerMenuKnownIcon.UndoRedo);
+
         }
     }
 }
