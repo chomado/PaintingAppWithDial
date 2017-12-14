@@ -1,17 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Input;
-using Windows.UI.Xaml;
+using Windows.UI.Input.Inking;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 // 空白ページの項目テンプレートについては、https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x411 を参照してください
@@ -37,9 +28,55 @@ namespace PaintingAppWithDial
             var controller = RadialController.CreateForCurrentView();
 
             // ホイールに追加するメニューを作成（この場合、undo/redo）
-            var menuItem = RadialControllerMenuItem
+            var undoRedoMenuItem = RadialControllerMenuItem
                 .CreateFromKnownIcon(displayText: "取り消し/やり直し", value: RadialControllerMenuKnownIcon.UndoRedo);
 
+            // さっき作ったメニューを追加する
+            controller.Menu.Items.Add(undoRedoMenuItem);
+
+            // 消した線を取っておく場所
+            var undoBuffer = new Stack<InkStroke>();
+
+            // ホイールを回したときに呼ばれる
+            controller.RotationChanged += (_, args) =>
+            {
+                // 今選ばれているメニューは undo/redo である
+                if (controller.Menu.GetSelectedMenuItem() == undoRedoMenuItem)
+                {
+                    // undo
+                    if (args.RotationDeltaInDegrees < 0)
+                    {
+                        // 最後に引かれた線を取ってくる
+                        var stroke = inkCanvas.InkPresenter.StrokeContainer.GetStrokes()
+                                        .LastOrDefault();
+
+                        // 「最後に引かれた線」があったら
+                        if (stroke != null)
+                        {
+                            // 線を選択状態にする
+                            stroke.Selected = true;
+
+                            // 選択した線が消える
+                            inkCanvas.InkPresenter.StrokeContainer.DeleteSelected();
+
+                            // 消した線を取っておく
+                            undoBuffer.Push(stroke);
+                        }
+                    }
+                    // redo
+                    else
+                    {
+                        // 「消した線」が存在したら
+                        if (undoBuffer.TryPop(out var stroke))
+                        {
+                            // 最後に消した線を、画面に戻す
+                            inkCanvas.InkPresenter.StrokeContainer
+                                    .AddStroke(stroke.Clone());
+                        }
+                    }
+                }
+            };
         }
+
     }
 }
