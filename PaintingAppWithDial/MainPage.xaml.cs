@@ -76,7 +76,13 @@ namespace PaintingAppWithDial
                     }
                 }
             };
-        }
 
+            // 新たに線画引かれた時に呼ばれる
+            inkCanvas.InkPresenter.StrokesCollected += (_, args) =>
+            {
+                // 消した線の情報を破棄する
+                undoBuffer.Clear();
+            };
+        }
     }
 }
